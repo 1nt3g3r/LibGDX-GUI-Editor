@@ -91,20 +91,16 @@ public class GUIEditor implements ApplicationListener {
 
 		// 10px space below objects
 		window.defaults().spaceBottom(10);
-		window.row();
 		window.row().fill().expandX();
 		TextButton btnSave = new TextButton("Save", skin);
 		window.add(btnSave);
 
-		window.row().fill().expandX();
 		TextButton btnOpen = new TextButton("Open", skin);
 		window.add(btnOpen);
 
-		window.row().fill().expandX();
 		TextButton btnNew = new TextButton("New", skin);
 		window.add(btnNew);
 
-		window.row().fill().expandX();
 		TextButton btnClose = new TextButton("Close", skin);
 		window.add(btnClose);
 
@@ -118,20 +114,15 @@ public class GUIEditor implements ApplicationListener {
 
 		// 10px space below objects
 		window.defaults().spaceBottom(10);
-		window.row();
-		window.row().fill().expandX();
 		TextButton btnSave = new TextButton("Save", skin);
 		window.add(btnSave);
 
-		window.row().fill().expandX();
 		TextButton btnOpen = new TextButton("Open", skin);
 		window.add(btnOpen);
 
-		window.row().fill().expandX();
 		TextButton btnNew = new TextButton("New", skin);
 		window.add(btnNew);
 
-		window.row().fill().expandX();
 		TextButton btnClose = new TextButton("Close", skin);
 		window.add(btnClose);
 
@@ -254,23 +245,39 @@ public class GUIEditor implements ApplicationListener {
 		//wndTools.setWidth(75);
 		//wndLayouts.setWidth(65);
 		
-		wndContainers.setX(defaultGapSize + wndTools.getWidth() + defaultGapSize); 
-		wndContainers.setY(height - wndContainers.getHeight() - defaultGapSize);
-		wndTools.setX(defaultGapSize); 
-		wndTools.setY(height - (wndTools.getHeight() + defaultGapSize));
-		wndLayouts.setX(defaultGapSize);
-		wndLayouts.setY(height - wndTools.getHeight() - defaultGapSize - wndLayouts.getHeight()- defaultGapSize);
-		wndProjects.setX(defaultGapSize + wndLayouts.getWidth() + defaultGapSize);
-		wndProjects.setY(height - wndTools.getHeight() - defaultGapSize - wndProjects.getHeight()- defaultGapSize);
 		
-		wndButtons.setY(height - wndButtons.getHeight() - defaultGapSize);
+		wndLayouts.setX(width/2 -wndLayouts.getWidth() - defaultGapSize);
+		wndLayouts.setY(height - wndLayouts.getHeight()- defaultGapSize);
+		wndProjects.setX(width/2 + defaultGapSize);
+		wndProjects.setY(height - wndProjects.getHeight()- defaultGapSize);
+		
+		float leftColumnWidth = defaultGapSize*2 + wndTools.getWidth() + wndContainers.getWidth();
+		float rightColumnWidth = Math.max(Math.max(wndButtons.getWidth(), wndText.getWidth()), 
+													wndMiscellaneous.getWidth());
+		float topColumnHeight = Math.max(wndLayouts.getHeight(), wndProjects.getHeight());
+		float upperGap = defaultGapSize*2;
+		//If layouts is colliding with left column or projects with right column
+		if (wndLayouts.getX() < leftColumnWidth+defaultGapSize ||
+				wndProjects.getX()+wndProjects.getWidth() > width - rightColumnWidth) {
+			//Then leave a gap between upper and right/left columns
+			upperGap += topColumnHeight;
+		}
+		
+		//Left column
+		wndContainers.setX(defaultGapSize + wndTools.getWidth() + defaultGapSize); 
+		wndContainers.setY(height - wndContainers.getHeight() - upperGap);
+		wndTools.setX(defaultGapSize); 
+		wndTools.setY(height - (wndTools.getHeight() + upperGap));
+		
+		//Right column
+		wndButtons.setY(height - wndButtons.getHeight() - upperGap);
 		wndButtons.setX(width - wndButtons.getWidth() - defaultGapSize);
-		wndText.setY(height - wndText.getHeight() - defaultGapSize - wndButtons.getHeight() - defaultGapSize);
+		wndText.setY(height - wndText.getHeight() - defaultGapSize - wndButtons.getHeight() - upperGap);
 		wndText.setX(width - wndText.getWidth() - defaultGapSize);
 		wndMiscellaneous.setX(width - wndMiscellaneous.getWidth() - defaultGapSize);
 		wndMiscellaneous.setY(height - wndMiscellaneous.getHeight() - defaultGapSize 
 						- wndButtons.getHeight() - defaultGapSize -
-						wndText.getHeight() - defaultGapSize);
+						wndText.getHeight() - upperGap);
 		}
 
 	@Override
