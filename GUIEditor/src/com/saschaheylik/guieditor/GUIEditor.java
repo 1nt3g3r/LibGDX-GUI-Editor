@@ -132,6 +132,7 @@ public class GUIEditor implements ApplicationListener {
 
 		TextButton btnClose = new TextButton("Close", skin);
 		window.add(btnClose);
+		window.row().fill().expandX().padBottom(10);
 
 		window.pack();
 		
@@ -152,6 +153,13 @@ public class GUIEditor implements ApplicationListener {
 	
 	public void addProject(Project newProject) {
 		projects.add(newProject);
+		
+		TextButton btnProject = new TextButton(newProject.getTitle(), skin);
+		wndProjects.add(btnProject);
+		
+		//If this is the first project to be added, resize wndProjects so it fits
+		if (projects.size == 1)
+			wndProjects.setHeight(wndProjects.getHeight()*2);
 	}
 	
 	public void displayNewProjectForm() {
