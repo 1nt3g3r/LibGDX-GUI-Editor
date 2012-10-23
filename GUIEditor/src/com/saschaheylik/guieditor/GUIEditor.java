@@ -4,6 +4,7 @@ import java.awt.Button;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -12,7 +13,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.SplitPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -33,6 +36,7 @@ public class GUIEditor implements ApplicationListener {
 	private Window wndProjects, wndButtons, wndText, wndMiscellaneous;
 	private int defaultWindowWidth = 125;
 	private int defaultGapSize = 5;
+	private List projectList;
 	
 	private Array<Project> projects;
 
@@ -132,7 +136,10 @@ public class GUIEditor implements ApplicationListener {
 
 		TextButton btnClose = new TextButton("Close", skin);
 		window.add(btnClose);
-		window.row().fill().expandX().padBottom(10);
+		
+		window.row().fill().expandX();
+		projectList = new List(new String[] {}, skin);
+		window.add(projectList);
 
 		window.pack();
 		
@@ -154,12 +161,20 @@ public class GUIEditor implements ApplicationListener {
 	public void addProject(Project newProject) {
 		projects.add(newProject);
 		
-		TextButton btnProject = new TextButton(newProject.getTitle(), skin);
-		wndProjects.add(btnProject);
+		//Add Project title to list
+		String[] listItems = projectList.getItems();
+		String[] newListItems = new String[listItems.length+1];
+		for (int i = 0; i < newListItems.length; i++) {
+			if (i < newListItems.length-1) newListItems[i] = listItems[i];
+			else newListItems[i] = newProject.getTitle();
+		}
+		projectList.setItems(newListItems);
 		
-		//If this is the first project to be added, resize wndProjects so it fits
-		if (projects.size == 1)
-			wndProjects.setHeight(wndProjects.getHeight()*2);
+		//Resize projects windows to fit
+		float oldListHeight = projectList.getHeight();
+		wndProjects.setHeight(wndProjects.getHeight()+(projectList.getHeight()-oldListHeight));
+		wndProjects.pack();
+		
 	}
 	
 	public void displayNewProjectForm() {
@@ -192,13 +207,26 @@ public class GUIEditor implements ApplicationListener {
 			@Override
 			public boolean handle(Event event) {
 				if (event.isHandled()) {
-					//Create new project
-					Project newProject = new Project(fieldTitle.getText());
-					newProject.setDescription(fieldDescription.getText());
+					//Check if project name is unique
+					boolean isUnique = true;
+					String[] projectNames = projectList.getItems();
+					String projectName = fieldTitle.getText();
+					for (int i = 0; i < projectNames.length; i++) {
+						if (projectNames[i].compareTo(projectName) == 0) isUnique = false;
+					}
 					
-					addProject(newProject);
+					//If yes, create new project
+					if (isUnique) {
+						Project newProject = new Project(projectName);
+						newProject.setDescription(fieldDescription.getText());
 					
-					newProjectForm.remove();
+						addProject(newProject);
+					
+						newProjectForm.remove();
+					//Else, display an error message
+					} else {
+						showError("The project title has to be unique!");
+					}
 				}
 				return false;
 			}
@@ -211,6 +239,13 @@ public class GUIEditor implements ApplicationListener {
 		
 		newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
 		stage.addActor(newProjectForm);
+	}
+	
+	public void showError(String message) {
+		new Dialog("Error", skin, "dialog") {
+			protected void result (Object object) {
+			}
+		}.text(message).button("OK", true).show(stage);
 	}
 
 	public Window createWndButtons() {
