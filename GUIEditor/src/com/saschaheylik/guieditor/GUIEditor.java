@@ -9,12 +9,17 @@ import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.SplitPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.badlogic.gdx.utils.Array;
 
 public class GUIEditor implements ApplicationListener {
 	private OrthographicCamera camera;
@@ -28,6 +33,8 @@ public class GUIEditor implements ApplicationListener {
 	private Window wndProjects, wndButtons, wndText, wndMiscellaneous;
 	private int defaultWindowWidth = 125;
 	private int defaultGapSize = 5;
+	
+	private Array<Project> projects;
 
 	public Window createWndContainers() {
 
@@ -127,8 +134,75 @@ public class GUIEditor implements ApplicationListener {
 		window.add(btnClose);
 
 		window.pack();
+		
+		btnNew.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				// Add new Project
+				if (event.isHandled())
+					displayNewProjectForm();
+				
+				return false;
+			}
+		});
 
 		return window;
+	}
+	
+	public void addProject(Project newProject) {
+		projects.add(newProject);
+	}
+	
+	public void displayNewProjectForm() {
+		final Window newProjectForm = new Window("New Project", skin);
+		
+		final TextField fieldTitle = new TextField("Title", skin);
+		final TextField fieldDescription = new TextField("Description", skin);
+		
+		newProjectForm.row().fill().expandX();
+		newProjectForm.add(fieldTitle);
+		newProjectForm.row().fill().expandX();
+		newProjectForm.add(fieldDescription);
+		
+		TextButton btnCancel = new TextButton("Cancel", skin);
+		TextButton btnOK = new TextButton("OK", skin);
+		
+		btnCancel.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					newProjectForm.remove();
+				}
+				return false;
+			}
+		});
+		
+		btnOK.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					//Create new project
+					Project newProject = new Project(fieldTitle.getText());
+					newProject.setDescription(fieldDescription.getText());
+					
+					addProject(newProject);
+					
+					newProjectForm.remove();
+				}
+				return false;
+			}
+		});
+		
+		newProjectForm.row().fill().expandX();
+		
+		SplitPane splitPane = new SplitPane(btnCancel, btnOK, false, skin);
+		newProjectForm.add(splitPane);
+		
+		newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
+		stage.addActor(newProjectForm);
 	}
 
 	public Window createWndButtons() {
@@ -213,6 +287,7 @@ public class GUIEditor implements ApplicationListener {
 		batch = new SpriteBatch();
 		skin = new Skin(Gdx.files.internal("data/uiskin.json"));
 		stage = new Stage(width, height, true);
+		projects = new Array<Project>();
 		Gdx.input.setInputProcessor(stage);
 
 		// window.debug();
