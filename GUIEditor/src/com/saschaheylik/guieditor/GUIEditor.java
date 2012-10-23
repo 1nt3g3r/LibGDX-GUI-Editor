@@ -16,11 +16,13 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.SplitPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.utils.Array;
 
@@ -37,6 +39,7 @@ public class GUIEditor implements ApplicationListener {
 	private int defaultWindowWidth = 125;
 	private int defaultGapSize = 5;
 	private List projectList;
+	private Window newProjectForm;
 	
 	private Array<Project> projects;
 
@@ -123,25 +126,33 @@ public class GUIEditor implements ApplicationListener {
 	public Window createWndProjects() {
 		Window window = new Window("Projects", skin);
 
-		// 10px space below objects
-		window.defaults().spaceBottom(10);
+		Table table = new Table(skin);
+		
+		table.defaults().spaceBottom(10);
+		table.row().fill().expandX();
 		TextButton btnSave = new TextButton("Save", skin);
-		window.add(btnSave);
+		table.add(btnSave);
 
+		table.row().fill().expandX();
 		TextButton btnOpen = new TextButton("Open", skin);
-		window.add(btnOpen);
+		table.add(btnOpen);
 
+		table.row().fill().expandX();
 		TextButton btnNew = new TextButton("New", skin);
-		window.add(btnNew);
+		table.add(btnNew);
 
+		table.row().fill().expandX();
 		TextButton btnClose = new TextButton("Close", skin);
-		window.add(btnClose);
+		table.add(btnClose);
+		table.layout();
+		
+		projectList = new List(new String[] {}, skin);
+		ScrollPane scrollPane = new ScrollPane(projectList, skin);
+		SplitPane splitPane = new SplitPane(table, scrollPane, false, skin);
 		
 		window.row().fill().expandX();
-		projectList = new List(new String[] {}, skin);
-		window.add(projectList);
-
-		window.pack();
+		window.add(splitPane);
+		window.setSize(150, 170);
 		
 		btnNew.addListener(new EventListener() {
 			
@@ -170,15 +181,15 @@ public class GUIEditor implements ApplicationListener {
 		}
 		projectList.setItems(newListItems);
 		
-		//Resize projects windows to fit
-		float oldListHeight = projectList.getHeight();
-		wndProjects.setHeight(wndProjects.getHeight()+(projectList.getHeight()-oldListHeight));
-		wndProjects.pack();
-		
 	}
 	
 	public void displayNewProjectForm() {
-		final Window newProjectForm = new Window("New Project", skin);
+		if (newProjectForm == null)
+			newProjectForm = new Window("New Project", skin);
+		else {
+			newProjectForm.setVisible(true);
+			return;
+		}
 		
 		final TextField fieldTitle = new TextField("Title", skin);
 		final TextField fieldDescription = new TextField("Description", skin);
@@ -196,7 +207,7 @@ public class GUIEditor implements ApplicationListener {
 			@Override
 			public boolean handle(Event event) {
 				if (event.isHandled()) {
-					newProjectForm.remove();
+					newProjectForm.setVisible(false);
 				}
 				return false;
 			}
@@ -222,7 +233,7 @@ public class GUIEditor implements ApplicationListener {
 					
 						addProject(newProject);
 					
-						newProjectForm.remove();
+						newProjectForm.setVisible(false);
 					//Else, display an error message
 					} else {
 						showError("The project title has to be unique!");
@@ -368,6 +379,9 @@ public class GUIEditor implements ApplicationListener {
 		wndLayouts.setY(height - wndLayouts.getHeight()- defaultGapSize);
 		wndProjects.setX(width/2 + defaultGapSize);
 		wndProjects.setY(height - wndProjects.getHeight()- defaultGapSize);
+		
+		if (newProjectForm != null)
+			newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
 		
 		float leftColumnWidth = defaultGapSize*2 + wndTools.getWidth() + wndContainers.getWidth();
 		float rightColumnWidth = Math.max(Math.max(wndButtons.getWidth(), wndText.getWidth()), 
