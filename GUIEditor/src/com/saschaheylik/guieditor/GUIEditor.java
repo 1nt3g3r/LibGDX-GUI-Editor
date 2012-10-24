@@ -5,6 +5,7 @@ import java.awt.Button;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -25,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.utils.Array;
+import com.google.gson.Gson;
 
 public class GUIEditor implements ApplicationListener {
 	private OrthographicCamera camera;
@@ -43,6 +45,9 @@ public class GUIEditor implements ApplicationListener {
 	
 	private Array<Project> projects;
 	private Array<Window> projectWindows;
+	private Gson gson;
+	
+	private String projectFolder = "projects";
 
 	private Window createWndContainers() {
 
@@ -173,7 +178,7 @@ public class GUIEditor implements ApplicationListener {
 			@Override
 			public boolean handle(Event event) {
 				if (event.isHandled()) {
-					closeSelectedProject();
+					removeSelectedProject();
 				}
 				return false;
 			}
@@ -190,8 +195,33 @@ public class GUIEditor implements ApplicationListener {
 				return false;
 			}
 		});
+		
+		btnSave.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled())
+					saveSelectedProject();
+				return false;
+			}
+		});
 
 		return window;
+	}
+	
+	private void saveSelectedProject(){
+		try {
+			Project project = getSelectedProject();
+			String path = projectFolder + "/" + project.getTitle() + ".json";
+			FileHandle file = Gdx.files.local(path);
+			gson = new Gson();
+			String projectJson = gson.toJson(project);
+			file.writeString(projectJson, false);
+			showInfo("Saved project as \"" + path + "\".");
+		} catch (Exception e) {
+			showError("Project couldn't be saved (none selected?)");
+			e.printStackTrace();
+		}
 	}
 	
 	private void addProject(Project newProject) {
@@ -213,7 +243,7 @@ public class GUIEditor implements ApplicationListener {
 		updateProjectWindows();
 	}
 	
-	private void closeSelectedProject() {
+	private void removeSelectedProject() {
 		if (projectList.getItems().length == 0) return;
 		int selectedProject = projectList.getSelectedIndex();
 		String selectedProjectTitle = projectList.getSelection();
@@ -240,6 +270,23 @@ public class GUIEditor implements ApplicationListener {
 				projectWindows.removeIndex(i);
 			}
 		}
+		//Find and remove project
+		for (Project project : projects) {
+			if (project.getTitle().compareTo(selectedProjectTitle) == 0)
+				projects.removeValue(project, false);
+		}
+	}
+	
+	private Project getSelectedProject() throws Exception {
+		return getProject(projectList.getSelection());
+	}
+	
+	private Project getProject(String title) throws Exception {
+		for (Project project : projects) {
+			if (project.getTitle().compareTo(title) == 0)
+				return project;
+		}
+		throw new Exception("Project with title \"" + title + "\" not found in projectList.");
 	}
 	
 	private int getProjectWindowIndex(String title) {
@@ -344,7 +391,15 @@ public class GUIEditor implements ApplicationListener {
 	}
 	
 	private void showError(String message) {
-		new Dialog("Error", skin, "dialog") {
+		showDialog("Error", message);
+	}
+	
+	private void showInfo(String message) {
+		showDialog("Info", message);
+	}
+
+	private void showDialog(String title, String message) {
+		new Dialog(title, skin, "dialog") {
 			protected void result (Object object) {
 			}
 		}.text(message).button("OK", true).show(stage);
