@@ -42,8 +42,9 @@ public class GUIEditor implements ApplicationListener {
 	private Window newProjectForm;
 	
 	private Array<Project> projects;
+	private Array<Window> projectWindows;
 
-	public Window createWndContainers() {
+	private Window createWndContainers() {
 
 		Window window = new Window("Containers", skin);
 
@@ -73,7 +74,7 @@ public class GUIEditor implements ApplicationListener {
 		return window;
 	}
 
-	public Window createWndTools() {
+	private Window createWndTools() {
 		Window window = new Window("Tools", skin);
 
 		// 10px space below objects
@@ -100,7 +101,7 @@ public class GUIEditor implements ApplicationListener {
 		return window;
 	}
 
-	public Window createWndLayouts() {
+	private Window createWndLayouts() {
 		Window window = new Window("Layouts", skin);
 
 		// 10px space below objects
@@ -123,27 +124,29 @@ public class GUIEditor implements ApplicationListener {
 		return window;
 	}
 
-	public Window createWndProjects() {
+	private Window createWndProjects() {
 		Window window = new Window("Projects", skin);
 
 		Table table = new Table(skin);
 		
 		table.defaults().spaceBottom(10);
-		table.row().fill().expandX();
-		TextButton btnSave = new TextButton("Save", skin);
-		table.add(btnSave);
-
-		table.row().fill().expandX();
-		TextButton btnOpen = new TextButton("Open", skin);
-		table.add(btnOpen);
 
 		table.row().fill().expandX();
 		TextButton btnNew = new TextButton("New", skin);
 		table.add(btnNew);
 
 		table.row().fill().expandX();
-		TextButton btnClose = new TextButton("Close", skin);
-		table.add(btnClose);
+		TextButton btnRemove = new TextButton("Remove", skin);
+		table.add(btnRemove);
+		
+		table.row().fill().expandX();
+		TextButton btnSave = new TextButton("Save", skin);
+		table.add(btnSave);
+
+		table.row().fill().expandX();
+		TextButton btnLoad = new TextButton("Load", skin);
+		table.add(btnLoad);
+		
 		table.layout();
 		
 		projectList = new List(new String[] {}, skin);
@@ -153,6 +156,28 @@ public class GUIEditor implements ApplicationListener {
 		window.row().fill().expandX();
 		window.add(splitPane);
 		window.setSize(150, 170);
+		
+		projectList.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					updateProjectWindows();
+				}
+				return false;
+			}
+		});
+		
+		btnRemove.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					closeSelectedProject();
+				}
+				return false;
+			}
+		});
 		
 		btnNew.addListener(new EventListener() {
 			
@@ -169,7 +194,7 @@ public class GUIEditor implements ApplicationListener {
 		return window;
 	}
 	
-	public void addProject(Project newProject) {
+	private void addProject(Project newProject) {
 		projects.add(newProject);
 		
 		//Add Project title to list
@@ -180,16 +205,82 @@ public class GUIEditor implements ApplicationListener {
 			else newListItems[i] = newProject.getTitle();
 		}
 		projectList.setItems(newListItems);
-		
+		projectList.setSelection(newProject.getTitle());
+		Window projectWindow = new Window(newProject.getTitle(), skin);
+		projectWindow.setPosition(width/2 - projectWindow.getWidth()/2, height/2-projectWindow.getHeight()/2);
+		projectWindows.add(projectWindow);
+		stage.addActor(projectWindow);
+		updateProjectWindows();
 	}
 	
-	public void displayNewProjectForm() {
-		if (newProjectForm == null)
-			newProjectForm = new Window("New Project", skin);
-		else {
+	private void closeSelectedProject() {
+		if (projectList.getItems().length == 0) return;
+		int selectedProject = projectList.getSelectedIndex();
+		String selectedProjectTitle = projectList.getSelection();
+		//Find and remove project title from list
+		String[] items = projectList.getItems();
+		String[] newListItems = new String[items.length-1];
+		boolean found = false;
+		for (int i = 0; i < items.length; i++) {
+			String item = items[i];	
+			if (i == selectedProject) {
+				found = true;
+			} else {
+				if (found)
+					newListItems[i-1] = item;
+				else
+					newListItems[i] = item;
+			}
+		}
+		projectList.setItems(newListItems);
+		//Find and remove project window
+		for (int i = 0; i < projectWindows.size; i++) {
+			if (projectWindows.get(i).getTitle().compareTo(selectedProjectTitle) == 0) {
+				projectWindows.get(i).remove();
+				projectWindows.removeIndex(i);
+			}
+		}
+	}
+	
+	private int getProjectWindowIndex(String title) {
+		for(int i = 0; i < projectWindows.size; i++) {
+			Window projectWindow = projectWindows.get(i);
+			if (projectWindow.getTitle().compareTo(title) == 0)
+				return i;	
+		}
+		return -1;
+	}
+	
+	private void updateProjectWindows() {
+		String selection = projectList.getSelection();
+		//Only display selected project
+		for(int i = 0; i < projectWindows.size; i++) {
+			Window projectWindow = projectWindows.get(i);
+			if (projectWindow.getTitle().compareTo(selection) == 0)
+				projectWindow.setVisible(true);
+			else {
+				projectWindow.setVisible(false);
+			}
+			
+			//Update active project window position
+			//projectWindow.setPosition(width/2 - projectWindow.getWidth()/2, height/2-projectWindow.getHeight()/2);
+		}
+	}
+	
+	private void displayNewProjectForm() {
+		if (newProjectForm != null) {
 			newProjectForm.setVisible(true);
+			newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
+			
+			//Make sure the form is displayed above the active project window
+			int activeProjectIndex = getProjectWindowIndex(projectList.getSelection());
+			if (activeProjectIndex != -1) {
+				Window activeProjectWindow = projectWindows.get(activeProjectIndex);
+				newProjectForm.setZIndex(activeProjectWindow.getZIndex()+1);
+			}
 			return;
 		}
+		newProjectForm = new Window("New Project", skin);
 		
 		final TextField fieldTitle = new TextField("Title", skin);
 		final TextField fieldDescription = new TextField("Description", skin);
@@ -252,14 +343,14 @@ public class GUIEditor implements ApplicationListener {
 		stage.addActor(newProjectForm);
 	}
 	
-	public void showError(String message) {
+	private void showError(String message) {
 		new Dialog("Error", skin, "dialog") {
 			protected void result (Object object) {
 			}
 		}.text(message).button("OK", true).show(stage);
 	}
 
-	public Window createWndButtons() {
+	private Window createWndButtons() {
 		Window window = new Window("Buttons", skin);
 
 		// 10px space below objects
@@ -288,7 +379,7 @@ public class GUIEditor implements ApplicationListener {
 		return window;
 	}
 	
-	public Window createWndText() {
+	private Window createWndText() {
 		Window window = new Window("Text", skin);
 
 		// 10px space below objects
@@ -311,7 +402,7 @@ public class GUIEditor implements ApplicationListener {
 		return window;
 	}
 
-	public Window createWndMiscellaneous() {
+	private Window createWndMiscellaneous() {
 		Window window = new Window("Miscellaneous", skin);
 
 		// 10px space below objects
@@ -342,6 +433,7 @@ public class GUIEditor implements ApplicationListener {
 		skin = new Skin(Gdx.files.internal("data/uiskin.json"));
 		stage = new Stage(width, height, true);
 		projects = new Array<Project>();
+		projectWindows = new Array<Window>();
 		Gdx.input.setInputProcessor(stage);
 
 		// window.debug();
@@ -379,9 +471,6 @@ public class GUIEditor implements ApplicationListener {
 		wndLayouts.setY(height - wndLayouts.getHeight()- defaultGapSize);
 		wndProjects.setX(width/2 + defaultGapSize);
 		wndProjects.setY(height - wndProjects.getHeight()- defaultGapSize);
-		
-		if (newProjectForm != null)
-			newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
 		
 		float leftColumnWidth = defaultGapSize*2 + wndTools.getWidth() + wndContainers.getWidth();
 		float rightColumnWidth = Math.max(Math.max(wndButtons.getWidth(), wndText.getWidth()), 
@@ -423,7 +512,8 @@ public class GUIEditor implements ApplicationListener {
 	public void render() {
 		width = Gdx.graphics.getWidth();
 		height = Gdx.graphics.getHeight();
-
+		
+		//updateProjectWindows();
 		updateWindows();
 
 		Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
