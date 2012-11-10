@@ -40,174 +40,15 @@ public class GUIEditor implements ApplicationListener {
 	private Window wndProjects, wndButtons, wndText, wndMiscellaneous;
 	private int defaultWindowWidth = 125;
 	private int defaultGapSize = 5;
-	private List projectList;
-	private Window newProjectForm;
+	private List projectList, projectFilesList;
+	private Window wndNewProjectForm;
+	private Window wndLoadProjectForm;
 	
 	private Array<Project> projects;
 	private Array<Window> projectWindows;
 	private Gson gson;
 	
 	private String projectFolder = "projects";
-
-	private Window createWndContainers() {
-
-		Window window = new Window("Containers", skin);
-
-		// 10px space above objects
-		window.defaults().spaceBottom(10);
-		window.row().fill().expandX();
-		TextButton btnAddWindow = new TextButton("Add Window", skin);
-		window.add(btnAddWindow);
-
-		window.row().fill().expandX();
-		TextButton btnAddTable = new TextButton("Add Table", skin);
-		window.add(btnAddTable);
-
-		window.row().fill().expandX();
-		TextButton btnAddSplitPane = new TextButton("Add SplitPane", skin);
-		window.add(btnAddSplitPane);
-
-		window.row().fill().expandX();
-		TextButton btnAddScrollPane = new TextButton("Add ScrollPane", skin);
-		window.add(btnAddScrollPane);
-
-		// window.setWidth(defaultWindowWidth);
-		// window.setHeight(4*30 + 20);
-
-		window.pack();
-
-		return window;
-	}
-
-	private Window createWndTools() {
-		Window window = new Window("Tools", skin);
-
-		// 10px space below objects
-		window.defaults().spaceBottom(10);
-		window.row();
-		window.row().fill().expandX();
-		TextButton btnRemove = new TextButton("Remove", skin);
-		window.add(btnRemove);
-
-		window.row().fill().expandX();
-		TextButton btnMove = new TextButton("Move", skin);
-		window.add(btnMove);
-
-		window.row().fill().expandX();
-		TextButton btnResize = new TextButton("Resize", skin);
-		window.add(btnResize);
-
-		window.row().fill().expandX();
-		TextButton btnEdit = new TextButton("Edit", skin);
-		window.add(btnEdit);
-
-		window.pack();
-
-		return window;
-	}
-
-	private Window createWndLayouts() {
-		Window window = new Window("Layouts", skin);
-
-		// 10px space below objects
-		window.defaults().spaceBottom(10);
-		window.row().fill().expandX();
-		TextButton btnSave = new TextButton("Save", skin);
-		window.add(btnSave);
-
-		TextButton btnOpen = new TextButton("Open", skin);
-		window.add(btnOpen);
-
-		TextButton btnNew = new TextButton("New", skin);
-		window.add(btnNew);
-
-		TextButton btnClose = new TextButton("Close", skin);
-		window.add(btnClose);
-
-		window.pack();
-
-		return window;
-	}
-
-	private Window createWndProjects() {
-		Window window = new Window("Projects", skin);
-
-		Table table = new Table(skin);
-		
-		table.defaults().spaceBottom(10);
-
-		table.row().fill().expandX();
-		TextButton btnNew = new TextButton("New", skin);
-		table.add(btnNew);
-
-		table.row().fill().expandX();
-		TextButton btnRemove = new TextButton("Remove", skin);
-		table.add(btnRemove);
-		
-		table.row().fill().expandX();
-		TextButton btnSave = new TextButton("Save", skin);
-		table.add(btnSave);
-
-		table.row().fill().expandX();
-		TextButton btnLoad = new TextButton("Load", skin);
-		table.add(btnLoad);
-		
-		table.layout();
-		
-		projectList = new List(new String[] {}, skin);
-		ScrollPane scrollPane = new ScrollPane(projectList, skin);
-		SplitPane splitPane = new SplitPane(table, scrollPane, false, skin);
-		
-		window.row().fill().expandX();
-		window.add(splitPane);
-		window.setSize(150, 170);
-		
-		projectList.addListener(new EventListener() {
-			
-			@Override
-			public boolean handle(Event event) {
-				if (event.isHandled()) {
-					updateProjectWindows();
-				}
-				return false;
-			}
-		});
-		
-		btnRemove.addListener(new EventListener() {
-			
-			@Override
-			public boolean handle(Event event) {
-				if (event.isHandled()) {
-					removeSelectedProject();
-				}
-				return false;
-			}
-		});
-		
-		btnNew.addListener(new EventListener() {
-			
-			@Override
-			public boolean handle(Event event) {
-				// Add new Project
-				if (event.isHandled())
-					displayNewProjectForm();
-				
-				return false;
-			}
-		});
-		
-		btnSave.addListener(new EventListener() {
-			
-			@Override
-			public boolean handle(Event event) {
-				if (event.isHandled())
-					saveSelectedProject();
-				return false;
-			}
-		});
-
-		return window;
-	}
 	
 	private void saveSelectedProject(){
 		try {
@@ -314,82 +155,6 @@ public class GUIEditor implements ApplicationListener {
 		}
 	}
 	
-	private void displayNewProjectForm() {
-		if (newProjectForm != null) {
-			newProjectForm.setVisible(true);
-			newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
-			
-			//Make sure the form is displayed above the active project window
-			int activeProjectIndex = getProjectWindowIndex(projectList.getSelection());
-			if (activeProjectIndex != -1) {
-				Window activeProjectWindow = projectWindows.get(activeProjectIndex);
-				newProjectForm.setZIndex(activeProjectWindow.getZIndex()+1);
-			}
-			return;
-		}
-		newProjectForm = new Window("New Project", skin);
-		
-		final TextField fieldTitle = new TextField("Title", skin);
-		final TextField fieldDescription = new TextField("Description", skin);
-		
-		newProjectForm.row().fill().expandX();
-		newProjectForm.add(fieldTitle);
-		newProjectForm.row().fill().expandX();
-		newProjectForm.add(fieldDescription);
-		
-		TextButton btnCancel = new TextButton("Cancel", skin);
-		TextButton btnOK = new TextButton("OK", skin);
-		
-		btnCancel.addListener(new EventListener() {
-			
-			@Override
-			public boolean handle(Event event) {
-				if (event.isHandled()) {
-					newProjectForm.setVisible(false);
-				}
-				return false;
-			}
-		});
-		
-		btnOK.addListener(new EventListener() {
-			
-			@Override
-			public boolean handle(Event event) {
-				if (event.isHandled()) {
-					//Check if project name is unique
-					boolean isUnique = true;
-					String[] projectNames = projectList.getItems();
-					String projectName = fieldTitle.getText();
-					for (int i = 0; i < projectNames.length; i++) {
-						if (projectNames[i].compareTo(projectName) == 0) isUnique = false;
-					}
-					
-					//If yes, create new project
-					if (isUnique) {
-						Project newProject = new Project(projectName);
-						newProject.setDescription(fieldDescription.getText());
-					
-						addProject(newProject);
-					
-						newProjectForm.setVisible(false);
-					//Else, display an error message
-					} else {
-						showError("The project title has to be unique!");
-					}
-				}
-				return false;
-			}
-		});
-		
-		newProjectForm.row().fill().expandX();
-		
-		SplitPane splitPane = new SplitPane(btnCancel, btnOK, false, skin);
-		newProjectForm.add(splitPane);
-		
-		newProjectForm.setPosition(width/2-newProjectForm.getWidth()/2, height/2-newProjectForm.getHeight()/2);
-		stage.addActor(newProjectForm);
-	}
-	
 	private void showError(String message) {
 		showDialog("Error", message);
 	}
@@ -403,81 +168,6 @@ public class GUIEditor implements ApplicationListener {
 			protected void result (Object object) {
 			}
 		}.text(message).button("OK", true).show(stage);
-	}
-
-	private Window createWndButtons() {
-		Window window = new Window("Buttons", skin);
-
-		// 10px space below objects
-		window.defaults().spaceBottom(10);
-		window.row();
-		window.row().fill().expandX();
-		TextButton btnAddTextButton = new TextButton("Add TextButton", skin);
-		window.add(btnAddTextButton);
-
-		window.row().fill().expandX();
-		TextButton btnAddImageButton = new TextButton("Add ImageButton", skin);
-		window.add(btnAddImageButton);
-
-		window.row().fill().expandX();
-		TextButton btnAddTextButtonToggle = new TextButton(
-				"Add TextButton (Toggle)", skin);
-		window.add(btnAddTextButtonToggle);
-
-		window.row().fill().expandX();
-		TextButton btnAddImageButtonToggle = new TextButton(
-				"Add ImageButton (Toggle)", skin);
-		window.add(btnAddImageButtonToggle);
-
-		window.pack();
-
-		return window;
-	}
-	
-	private Window createWndText() {
-		Window window = new Window("Text", skin);
-
-		// 10px space below objects
-		window.defaults().spaceBottom(10);
-		window.row().fill().expandX();
-		TextButton btnAddLabel = new TextButton("Add Label", skin);
-		window.add(btnAddLabel);
-
-		window.row().fill().expandX();
-		TextButton btnAddTextField = new TextButton("Add TextField", skin);
-		window.add(btnAddTextField);
-
-		window.row().fill().expandX();
-		TextButton btnAddPasswordField = new TextButton(
-				"Add TextButton (Toggle)", skin);
-		window.add(btnAddPasswordField);
-
-		window.pack();
-
-		return window;
-	}
-
-	private Window createWndMiscellaneous() {
-		Window window = new Window("Miscellaneous", skin);
-
-		// 10px space below objects
-		window.defaults().spaceBottom(10);
-		window.row().fill().expandX();
-		TextButton btnAddImage = new TextButton("Add Image", skin);
-		window.add(btnAddImage);
-
-		window.row().fill().expandX();
-		TextButton btnAddSlider= new TextButton("Add Slider", skin);
-		window.add(btnAddSlider);
-
-		window.row().fill().expandX();
-		TextButton btnAddSelectBox = new TextButton(
-				"Add Dropdown", skin);
-		window.add(btnAddSelectBox);
-
-		window.pack();
-
-		return window;
 	}
 	
 	@Override
@@ -595,5 +285,379 @@ public class GUIEditor implements ApplicationListener {
 
 	@Override
 	public void resume() {
+	}
+	
+	private Window createWndButtons() {
+		Window window = new Window("Buttons", skin);
+
+		// 10px space below objects
+		window.defaults().spaceBottom(10);
+		window.row();
+		window.row().fill().expandX();
+		TextButton btnAddTextButton = new TextButton("Add TextButton", skin);
+		window.add(btnAddTextButton);
+
+		window.row().fill().expandX();
+		TextButton btnAddImageButton = new TextButton("Add ImageButton", skin);
+		window.add(btnAddImageButton);
+
+		window.row().fill().expandX();
+		TextButton btnAddTextButtonToggle = new TextButton(
+				"Add TextButton (Toggle)", skin);
+		window.add(btnAddTextButtonToggle);
+
+		window.row().fill().expandX();
+		TextButton btnAddImageButtonToggle = new TextButton(
+				"Add ImageButton (Toggle)", skin);
+		window.add(btnAddImageButtonToggle);
+
+		window.pack();
+
+		return window;
+	}
+	
+	private Window createWndText() {
+		Window window = new Window("Text", skin);
+
+		// 10px space below objects
+		window.defaults().spaceBottom(10);
+		window.row().fill().expandX();
+		TextButton btnAddLabel = new TextButton("Add Label", skin);
+		window.add(btnAddLabel);
+
+		window.row().fill().expandX();
+		TextButton btnAddTextField = new TextButton("Add TextField", skin);
+		window.add(btnAddTextField);
+
+		window.row().fill().expandX();
+		TextButton btnAddPasswordField = new TextButton(
+				"Add TextButton (Toggle)", skin);
+		window.add(btnAddPasswordField);
+
+		window.pack();
+
+		return window;
+	}
+
+	private Window createWndMiscellaneous() {
+		Window window = new Window("Miscellaneous", skin);
+
+		// 10px space below objects
+		window.defaults().spaceBottom(10);
+		window.row().fill().expandX();
+		TextButton btnAddImage = new TextButton("Add Image", skin);
+		window.add(btnAddImage);
+
+		window.row().fill().expandX();
+		TextButton btnAddSlider= new TextButton("Add Slider", skin);
+		window.add(btnAddSlider);
+
+		window.row().fill().expandX();
+		TextButton btnAddSelectBox = new TextButton(
+				"Add Dropdown", skin);
+		window.add(btnAddSelectBox);
+
+		window.pack();
+
+		return window;
+	}
+	
+	private Window createWndContainers() {
+
+		Window window = new Window("Containers", skin);
+
+		// 10px space above objects
+		window.defaults().spaceBottom(10);
+		window.row().fill().expandX();
+		TextButton btnAddWindow = new TextButton("Add Window", skin);
+		window.add(btnAddWindow);
+
+		window.row().fill().expandX();
+		TextButton btnAddTable = new TextButton("Add Table", skin);
+		window.add(btnAddTable);
+
+		window.row().fill().expandX();
+		TextButton btnAddSplitPane = new TextButton("Add SplitPane", skin);
+		window.add(btnAddSplitPane);
+
+		window.row().fill().expandX();
+		TextButton btnAddScrollPane = new TextButton("Add ScrollPane", skin);
+		window.add(btnAddScrollPane);
+
+		// window.setWidth(defaultWindowWidth);
+		// window.setHeight(4*30 + 20);
+
+		window.pack();
+
+		return window;
+	}
+
+	private Window createWndTools() {
+		Window window = new Window("Tools", skin);
+
+		// 10px space below objects
+		window.defaults().spaceBottom(10);
+		window.row();
+		window.row().fill().expandX();
+		TextButton btnRemove = new TextButton("Remove", skin);
+		window.add(btnRemove);
+
+		window.row().fill().expandX();
+		TextButton btnMove = new TextButton("Move", skin);
+		window.add(btnMove);
+
+		window.row().fill().expandX();
+		TextButton btnResize = new TextButton("Resize", skin);
+		window.add(btnResize);
+
+		window.row().fill().expandX();
+		TextButton btnEdit = new TextButton("Edit", skin);
+		window.add(btnEdit);
+
+		window.pack();
+
+		return window;
+	}
+
+	private Window createWndLayouts() {
+		Window window = new Window("Layouts", skin);
+
+		// 10px space below objects
+		window.defaults().spaceBottom(10);
+		window.row().fill().expandX();
+		TextButton btnSave = new TextButton("Save", skin);
+		window.add(btnSave);
+
+		TextButton btnOpen = new TextButton("Open", skin);
+		window.add(btnOpen);
+
+		TextButton btnNew = new TextButton("New", skin);
+		window.add(btnNew);
+
+		TextButton btnClose = new TextButton("Close", skin);
+		window.add(btnClose);
+
+		window.pack();
+
+		return window;
+	}
+
+	private Window createWndProjects() {
+
+		
+		Window window = new Window("Projects", skin);
+
+		Table table = new Table(skin);
+		
+		table.defaults().spaceBottom(10);
+
+		table.row().fill().expandX();
+		TextButton btnNew = new TextButton("New", skin);
+		table.add(btnNew);
+
+		table.row().fill().expandX();
+		TextButton btnRemove = new TextButton("Remove", skin);
+		table.add(btnRemove);
+		
+		table.row().fill().expandX();
+		TextButton btnSave = new TextButton("Save", skin);
+		table.add(btnSave);
+
+		table.row().fill().expandX();
+		TextButton btnLoad = new TextButton("Load", skin);
+		table.add(btnLoad);
+		
+		table.layout();
+		
+		projectList = new List(new String[] {}, skin);
+		ScrollPane scrollPane = new ScrollPane(projectList, skin);
+		SplitPane splitPane = new SplitPane(table, scrollPane, false, skin);
+		
+		window.row().fill().expandX();
+		window.add(splitPane);
+		window.setSize(150, 170);
+		
+		projectList.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					updateProjectWindows();
+				}
+				return false;
+			}
+		});
+		
+		btnRemove.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					removeSelectedProject();
+				}
+				return false;
+			}
+		});
+		
+		btnNew.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				// Add new Project
+				if (event.isHandled())
+					displayNewProjectForm();
+				
+				return false;
+			}
+		});
+		
+		btnSave.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled())
+					saveSelectedProject();
+				return false;
+			}
+		});
+		
+		btnLoad.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled())
+					displayLoadProjectForm();
+				return false;
+			}
+		});
+
+		return window;
+	}
+	
+	private void displayNewProjectForm() {
+		if (wndNewProjectForm != null) {
+			wndNewProjectForm.setVisible(true);
+			wndNewProjectForm.setPosition(width/2-wndNewProjectForm.getWidth()/2, height/2-wndNewProjectForm.getHeight()/2);
+			
+			//Make sure the form is displayed above the active project window
+			int activeProjectIndex = getProjectWindowIndex(projectList.getSelection());
+			if (activeProjectIndex != -1) {
+				Window activeProjectWindow = projectWindows.get(activeProjectIndex);
+				wndNewProjectForm.setZIndex(activeProjectWindow.getZIndex()+1);
+			}
+			return;
+		}
+		wndNewProjectForm = new Window("New Project", skin);
+		
+		final TextField fieldTitle = new TextField("Title", skin);
+		final TextField fieldDescription = new TextField("Description", skin);
+		
+		wndNewProjectForm.row().fill().expandX();
+		wndNewProjectForm.add(fieldTitle);
+		wndNewProjectForm.row().fill().expandX();
+		wndNewProjectForm.add(fieldDescription);
+		
+		TextButton btnCancel = new TextButton("Cancel", skin);
+		TextButton btnOK = new TextButton("OK", skin);
+		
+		btnCancel.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					wndNewProjectForm.setVisible(false);
+				}
+				return false;
+			}
+		});
+		
+		btnOK.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					//Check if project name is unique
+					boolean isUnique = true;
+					String[] projectNames = projectList.getItems();
+					String projectName = fieldTitle.getText();
+					for (int i = 0; i < projectNames.length; i++) {
+						if (projectNames[i].compareTo(projectName) == 0) isUnique = false;
+					}
+					
+					//If yes, create new project
+					if (isUnique) {
+						Project newProject = new Project(projectName);
+						newProject.setDescription(fieldDescription.getText());
+					
+						addProject(newProject);
+					
+						wndNewProjectForm.setVisible(false);
+					//Else, display an error message
+					} else {
+						showError("The project title has to be unique!");
+					}
+				}
+				return false;
+			}
+		});
+		
+		wndNewProjectForm.row().fill().expandX();
+		
+		SplitPane splitPane = new SplitPane(btnCancel, btnOK, false, skin);
+		wndNewProjectForm.add(splitPane);
+		
+		wndNewProjectForm.setPosition(width/2-wndNewProjectForm.getWidth()/2, height/2-wndNewProjectForm.getHeight()/2);
+		stage.addActor(wndNewProjectForm);
+	}
+	
+	private void centerWindow(Window window) {
+		window.setPosition(width/2-window.getWidth()/2, height/2-window.getHeight()/2);
+	}
+	
+	private void displayLoadProjectForm() {
+		FileHandle[] projectFiles = Gdx.files.internal(projectFolder).list();
+		
+		if (wndLoadProjectForm != null) {
+			wndLoadProjectForm.setVisible(true);
+			centerWindow(wndLoadProjectForm);
+			projectFilesList = new List(projectFiles, skin);
+			return;
+		} 
+		
+		wndLoadProjectForm = new Window("Load Project", skin);
+		projectFilesList = new List(projectFiles, skin);
+		wndLoadProjectForm.add(new ScrollPane(projectFilesList));
+		wndLoadProjectForm.row().fill().expandX();
+		
+		TextButton btnCancel = new TextButton("Cancel", skin);
+		TextButton btnLoad = new TextButton("Load", skin);
+		wndLoadProjectForm.add(new SplitPane(btnCancel, btnLoad, false, skin));
+		btnLoad.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					String projectFilePath = projectFilesList.getSelection();
+					FileHandle projectFile = Gdx.files.internal(projectFilePath);
+					String projectJson = projectFile.readString();
+					gson = new Gson();
+					Project project = gson.fromJson(projectJson, Project.class);
+					addProject(project);
+				}
+				return false;
+			}
+		});
+		btnCancel.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					wndLoadProjectForm.setVisible(false);
+				}
+				return false;
+			}
+		});
+		stage.addActor(wndLoadProjectForm);
+		centerWindow(wndLoadProjectForm);
 	}
 }
