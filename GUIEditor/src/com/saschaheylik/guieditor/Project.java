@@ -13,13 +13,24 @@ public class Project {
 		layouts  = new Array<Layout>();
 	}
 	
-	public void setDescription(String description) {
-		this.description = description;
+	public boolean addLayout(Layout newLayout) {
+		for (Layout layout: layouts) {
+			if (layout.title.compareTo(newLayout.title) == 0)
+				return true;
+		}
+		layouts.add(newLayout);
+		return false;
 	}
 	
-	public String getTitle() {
-		return title;
+	public void removeLayout(Layout layout) {
+		layouts.removeValue(layout, false);
 	}
 	
-	public int save(String path) {return 0;}
+	public Array<Layout> getLayouts() {
+		return layouts;
+	}
+	
+	public void setTitle(String newTitle) { title = newTitle; }
+	public void setDescription(String description) { this.description = description; }
+	public String getTitle() { return title; }
 }
