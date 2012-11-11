@@ -446,14 +446,14 @@ public class GUIEditor implements ApplicationListener {
 		Window window = new Window("Layouts", skin);
 
 		// 10px space below objects
-		window.defaults().spaceBottom(10);
+		window.defaults().spaceTop(10);
 		
 		window.row().fill().expandX();
 		TextButton btnNew = new TextButton("New", skin);
 		
 		TextButton btnDelete = new TextButton("Delete", skin);
 		
-		listLayouts = new List(new String [] {"Test", "Test2"}, skin);
+		listLayouts = new List(new String [] {}, skin);
 		
 		window.add(new SplitPane(btnNew, btnDelete, false, skin));
 		
@@ -482,7 +482,9 @@ public class GUIEditor implements ApplicationListener {
 			}
 		});
 
+		
 		window.pack();
+		window.setHeight(170);
 
 		return window;
 	}
