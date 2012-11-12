@@ -455,10 +455,7 @@ public class GUIEditor implements ApplicationListener {
 		
 		listLayouts = new List(new String [] {}, skin);
 		
-		window.add(new SplitPane(btnNew, btnDelete, false, skin));
-		
-		window.row().fill().expandX();
-		window.add(new ScrollPane(listLayouts));
+		window.add(new SplitPane(new ScrollPane(listLayouts), new SplitPane(btnNew, btnDelete, false, skin), true, skin));
 
 		btnNew.addListener(new EventListener() {
 
@@ -556,6 +553,7 @@ public class GUIEditor implements ApplicationListener {
 		
 		centerWindow(wndNewLayout);
 		stage.addActor(wndNewLayout);
+		wndNewLayout.toFront();
 	}
 	
 	private void addLayoutToSelectedProject(Layout layout) {
@@ -694,10 +692,7 @@ public class GUIEditor implements ApplicationListener {
 			int activeProjectIndex = getProjectWindowIndex(listProjects
 					.getSelection());
 			if (activeProjectIndex != -1) {
-				Window activeProjectWindow = projectWindows
-						.get(activeProjectIndex);
-				wndNewProject
-						.setZIndex(activeProjectWindow.getZIndex() + 1);
+				wndNewProject.toFront();
 			}
 			return;
 		}
@@ -817,5 +812,6 @@ public class GUIEditor implements ApplicationListener {
 		});
 		stage.addActor(wndLoadProject);
 		centerWindow(wndLoadProject);
+		wndLoadProject.toFront();
 	}
 }
