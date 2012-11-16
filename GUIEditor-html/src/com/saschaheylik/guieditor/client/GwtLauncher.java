@@ -1,6 +1,6 @@
 package com.saschaheylik.guieditor.client;
 
-import com.saschaheylik.guieditor.GUIEditor;
+import com.saschaheylik.guieditor.App;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
@@ -14,6 +14,6 @@ public class GwtLauncher extends GwtApplication {
 
 	@Override
 	public ApplicationListener getApplicationListener () {
-		return new GUIEditor();
+		return new App();
 	}
 }

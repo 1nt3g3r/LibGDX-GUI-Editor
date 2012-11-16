@@ -1,15 +1,10 @@
-package com.saschaheylik.guieditor;
+package com.saschaheylik.guieditor.screens;
 
-import java.awt.Button;
-
-import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
@@ -18,37 +13,39 @@ import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.SplitPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
-import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.Gson;
+import com.saschaheylik.guieditor.Layout;
+import com.saschaheylik.guieditor.Project;
 
-public class GUIEditor implements ApplicationListener {
+public class GUIEditorScreen implements Screen {
 	private OrthographicCamera camera;
 	private SpriteBatch batch;
 	private Stage stage;
 	private Skin skin;
 	private float width, height;
 
-	private Label label;
 	private Window wndContainers, wndTools, wndLayouts;
 	private Window wndProjects, wndButtons, wndText, wndMiscellaneous;
-	private int defaultWindowWidth = 125;
-	private int defaultGapSize = 5;
+	private int gapSize = 5;
 	private List listProjects, listProjectFiles, listLayouts;
 	private Window wndNewProject, wndLoadProject;
-	private Window wndNewLayout;
+	private Window wndNewLayout, wndInfo;
 
 	private Array<Project> projects;
 	private Array<Window> projectWindows;
 	private Gson gson;
 
 	private String projectFolder = "projects";
+	
+	@Override
+	public void hide() {}
 
 	private void saveSelectedProject() {
 		try {
@@ -178,17 +175,29 @@ public class GUIEditor implements ApplicationListener {
 			}
 		}.text(message).button("OK", true).show(stage);
 	}
+	
+	private Window createWndInfo() {
+		Window window = new Window("Info", skin);
+		Label infoLabel = new Label("  Press [TAB] to switch between Editor and Project", skin);
+
+		window.setSize(infoLabel.getWidth()+2*gapSize, 50);
+		window.row().expandX().fill();
+		window.addActor(infoLabel);
+		
+		return window;
+	}
 
 	@Override
-	public void create() {
+	public void show() {
 
 		camera = new OrthographicCamera(1, height / width);
 		batch = new SpriteBatch();
 		skin = new Skin(Gdx.files.internal("data/uiskin.json"));
 		stage = new Stage(width, height, true);
+		Gdx.input.setInputProcessor(stage);
+		
 		projects = new Array<Project>();
 		projectWindows = new Array<Window>();
-		Gdx.input.setInputProcessor(stage);
 
 		// window.debug();
 
@@ -212,6 +221,9 @@ public class GUIEditor implements ApplicationListener {
 
 		wndMiscellaneous = createWndMiscellaneous();
 		stage.addActor(wndMiscellaneous);
+		
+		wndInfo = createWndInfo();
+		stage.addActor(wndInfo);
 	}
 
 	public void updateWindows() {
@@ -220,22 +232,22 @@ public class GUIEditor implements ApplicationListener {
 		// wndTools.setWidth(75);
 		// wndLayouts.setWidth(65);
 
-		wndLayouts.setX(width / 2 - wndLayouts.getWidth() - defaultGapSize);
-		wndLayouts.setY(height - wndLayouts.getHeight() - defaultGapSize);
-		wndProjects.setX(width / 2 + defaultGapSize);
-		wndProjects.setY(height - wndProjects.getHeight() - defaultGapSize);
+		wndLayouts.setX(width / 2 - wndLayouts.getWidth() - gapSize);
+		wndLayouts.setY(height - wndLayouts.getHeight() - gapSize);
+		wndProjects.setX(width / 2 + gapSize);
+		wndProjects.setY(height - wndProjects.getHeight() - gapSize);
 
-		float leftColumnWidth = defaultGapSize * 2 + wndTools.getWidth()
+		float leftColumnWidth = gapSize * 2 + wndTools.getWidth()
 				+ wndContainers.getWidth();
 		float rightColumnWidth = Math.max(
 				Math.max(wndButtons.getWidth(), wndText.getWidth()),
 				wndMiscellaneous.getWidth());
 		float topColumnHeight = Math.max(wndLayouts.getHeight(),
 				wndProjects.getHeight());
-		float upperGap = defaultGapSize * 2;
+		float upperGap = gapSize * 2;
 		// If layouts is colliding with left column or projects with right
 		// column
-		if (wndLayouts.getX() < leftColumnWidth + defaultGapSize
+		if (wndLayouts.getX() < leftColumnWidth + gapSize
 				|| wndProjects.getX() + wndProjects.getWidth() > width
 						- rightColumnWidth) {
 			// Then leave a gap between upper and right/left columns
@@ -243,23 +255,25 @@ public class GUIEditor implements ApplicationListener {
 		}
 
 		// Left column
-		wndContainers.setX(defaultGapSize + wndTools.getWidth()
-				+ defaultGapSize);
+		wndContainers.setX(gapSize + wndTools.getWidth()
+				+ gapSize);
 		wndContainers.setY(height - wndContainers.getHeight() - upperGap);
-		wndTools.setX(defaultGapSize);
+		wndTools.setX(gapSize);
 		wndTools.setY(height - (wndTools.getHeight() + upperGap));
 
 		// Right column
 		wndButtons.setY(height - wndButtons.getHeight() - upperGap);
-		wndButtons.setX(width - wndButtons.getWidth() - defaultGapSize);
-		wndText.setY(height - wndText.getHeight() - defaultGapSize
+		wndButtons.setX(width - wndButtons.getWidth() - gapSize);
+		wndText.setY(height - wndText.getHeight() - gapSize
 				- wndButtons.getHeight() - upperGap);
-		wndText.setX(width - wndText.getWidth() - defaultGapSize);
+		wndText.setX(width - wndText.getWidth() - gapSize);
 		wndMiscellaneous.setX(width - wndMiscellaneous.getWidth()
-				- defaultGapSize);
+				- gapSize);
 		wndMiscellaneous.setY(height - wndMiscellaneous.getHeight()
-				- defaultGapSize - wndButtons.getHeight() - defaultGapSize
+				- gapSize - wndButtons.getHeight() - gapSize
 				- wndText.getHeight() - upperGap);
+		
+		wndInfo.setPosition(gapSize, gapSize);
 	}
 
 	@Override
@@ -279,7 +293,7 @@ public class GUIEditor implements ApplicationListener {
 	}
 	
 	@Override
-	public void render() {
+	public void render(float delta) {
 		width = Gdx.graphics.getWidth();
 		height = Gdx.graphics.getHeight();
 
@@ -290,7 +304,7 @@ public class GUIEditor implements ApplicationListener {
 
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
-		stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+		stage.act(Math.min(delta, 1 / 30f));
 		stage.draw();
 		Table.drawDebug(stage);
 
