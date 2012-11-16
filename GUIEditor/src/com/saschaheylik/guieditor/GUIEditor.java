@@ -507,6 +507,7 @@ public class GUIEditor implements ApplicationListener {
 	private void displayWndNewLayout() {
 		if (wndNewLayout != null) {
 			wndNewLayout.setVisible(true);
+			wndNewLayout.toFront();
 			return;
 		}
 		
@@ -684,16 +685,8 @@ public class GUIEditor implements ApplicationListener {
 	private void displayNewProjectForm() {
 		if (wndNewProject != null) {
 			wndNewProject.setVisible(true);
-			wndNewProject.setPosition(
-					width / 2 - wndNewProject.getWidth() / 2, height / 2
-							- wndNewProject.getHeight() / 2);
-
-			// Make sure the form is displayed above the active project window
-			int activeProjectIndex = getProjectWindowIndex(listProjects
-					.getSelection());
-			if (activeProjectIndex != -1) {
-				wndNewProject.toFront();
-			}
+			centerWindow(wndNewProject);
+			wndNewProject.toFront();
 			return;
 		}
 		wndNewProject = new Window("New Project", skin);
@@ -756,9 +749,9 @@ public class GUIEditor implements ApplicationListener {
 		SplitPane splitPane = new SplitPane(btnCancel, btnOK, false, skin);
 		wndNewProject.add(splitPane);
 
-		wndNewProject.setPosition(width / 2 - wndNewProject.getWidth()
-				/ 2, height / 2 - wndNewProject.getHeight() / 2);
 		stage.addActor(wndNewProject);
+		centerWindow(wndNewProject);
+		wndNewProject.toFront();
 	}
 
 	private void centerWindow(Window window) {
