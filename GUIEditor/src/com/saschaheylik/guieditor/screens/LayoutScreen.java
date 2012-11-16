@@ -5,22 +5,42 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.utils.Array;
+import com.saschaheylik.guieditor.Layout;
 import com.saschaheylik.guieditor.Project;
 
-public class ProjectScreen implements Screen {
+public class LayoutScreen implements Screen {
 	private OrthographicCamera camera;
 	private SpriteBatch batch;
 	private Stage stage;
 	private Skin skin;
+	private Layout layout;
 	private float width, height;
+	
+	public void setLayout(Layout newLayout) { layout = newLayout; updateLayout(); }
+	public Layout getLayout() { return layout; }
+	
+	public void updateLayout() {
+		if (layout == null) return;
+		
+		stage.clear();
+		Array<Actor> actors = layout.getActors();
+		for (Actor actor : actors) {
+			stage.addActor(actor);
+		}
+	}
 
 	@Override
 	public void render(float delta) {
+		if (layout != null && layout.hasChanged()) {
+			updateLayout(); layout.changeAccepted();
+		}
+		
 		width = Gdx.graphics.getWidth();
 		height = Gdx.graphics.getHeight();
 

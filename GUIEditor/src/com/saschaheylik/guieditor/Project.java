@@ -15,7 +15,7 @@ public class Project {
 	
 	public boolean addLayout(Layout newLayout) {
 		for (Layout layout: layouts) {
-			if (layout.title.compareTo(newLayout.title) == 0)
+			if (layout.getTitle().compareTo(newLayout.getTitle()) == 0)
 				return true;
 		}
 		layouts.add(newLayout);

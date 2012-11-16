@@ -8,75 +8,85 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.saschaheylik.guieditor.screens.GUIEditorScreen;
-import com.saschaheylik.guieditor.screens.ProjectScreen;
+import com.saschaheylik.guieditor.screens.LayoutScreen;
 
 public class App implements ApplicationListener {
 
-	private Screen screen, guiEditorScreen, projectScreen;
-	private Skin skin;
+	private GUIEditorScreen guiEditorScreen;
+	private LayoutScreen layoutScreen;
 	private boolean tabPressed = false;
+	private String activeScreen;
 	@Override
 	public void create() {
-		// TODO Auto-generated method stub
+		layoutScreen = new LayoutScreen();
+		layoutScreen.show();
+		layoutScreen.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		
 		guiEditorScreen = new GUIEditorScreen();
-		projectScreen = new ProjectScreen();
+		guiEditorScreen.show();
+		guiEditorScreen.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		
-		setScreen(guiEditorScreen);
-		
+		activeScreen = "guiEditor";
 	}
 
 	@Override
 	public void dispose () {
-		if (screen != null) screen.hide();
+		guiEditorScreen.hide();
+		layoutScreen.hide();
 	}
 
 	@Override
 	public void pause () {
-		if (screen != null) screen.pause();
+		guiEditorScreen.pause();
+		layoutScreen.pause();
 	}
 
 	@Override
 	public void resume () {
-		if (screen != null) screen.resume();
+		guiEditorScreen.resume();
+		layoutScreen.resume();
 	}
-
-	@Override
-	public void render () {
+	
+	private void update() {
+		if (guiEditorScreen.layoutHasChanged()) {
+			layoutScreen.setLayout(guiEditorScreen.getSelectedLayout());
+			guiEditorScreen.layoutChangeAccepted();
+		}
+		
 		if (Gdx.input.isKeyPressed(Keys.TAB)) {
 			tabPressed = true;
 		} else if (tabPressed) {
 			tabPressed = false;
 			switchScreen(); 
 		}
+	}
+
+	@Override
+	public void render () {
+		update();
 		
-		if (screen != null) screen.render(Gdx.graphics.getDeltaTime());
+		if (activeScreen.compareTo("guiEditor") == 0) guiEditorScreen.render(Gdx.graphics.getDeltaTime());
+		if (activeScreen.compareTo("layout") == 0) layoutScreen.render(Gdx.graphics.getDeltaTime());
 	}
 
 	@Override
 	public void resize (int width, int height) {
-		if (screen != null) screen.resize(width, height);
+		guiEditorScreen.resize(width, height);
+		layoutScreen.resize(width, height);
 	}
 	
 	public void switchScreen() {
-		if (getScreen() == null) return;
-		
-		if (getScreen() == projectScreen)
-			setScreen(guiEditorScreen);
-		else
-			setScreen(projectScreen);
-	}
-
-	/** Sets the current screen. {@link Screen#hide()} is called on any old screen, and {@link Screen#show()} is called on the new
-	 * screen. */
-	public void setScreen (Screen screen) {
-		if (this.screen != null) this.screen.hide();
-		this.screen = screen;
-		screen.show();
-		screen.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-	}
-
-	/** @return the currently active {@link Screen}. */
-	public Screen getScreen () {
-		return screen;
+		if (activeScreen.compareTo("guiEditor") == 0) {
+			activeScreen = "layout";
+			Layout layout = layoutScreen.getLayout();
+			if (layout != null)
+				Gdx.graphics.setTitle(layout.getTitle());
+			else
+				Gdx.graphics.setTitle("Layout");
+		}
+		else {
+			activeScreen = "guiEditor";
+			Gdx.graphics.setTitle("libGDX GUI-Editor");
+		}
 	}
 }

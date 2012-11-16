@@ -6,6 +6,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -39,10 +40,10 @@ public class GUIEditorScreen implements Screen {
 	private Window wndNewLayout, wndInfo;
 
 	private Array<Project> projects;
-	private Array<Window> projectWindows;
 	private Gson gson;
 
 	private String projectFolder = "projects";
+	private boolean layoutChanged = false;
 	
 	@Override
 	public void hide() {}
@@ -52,7 +53,6 @@ public class GUIEditorScreen implements Screen {
 			Project project = getSelectedProject();
 			String path = projectFolder + "/" + project.getTitle() + ".json";
 			FileHandle file = Gdx.files.local(path);
-			gson = new Gson();
 			String projectJson = gson.toJson(project);
 			file.writeString(projectJson, false);
 			showInfo("Saved project as \"" + path + "\".");
@@ -63,6 +63,11 @@ public class GUIEditorScreen implements Screen {
 	}
 
 	private void addProject(Project newProject) {
+		if (!isProjectTitleUnique(newProject.getTitle())) {
+			showError("Cannot add project because title is already in use!");
+			return;
+		}
+		
 		projects.add(newProject);
 
 		// Add Project title to list
@@ -76,11 +81,6 @@ public class GUIEditorScreen implements Screen {
 		}
 		listProjects.setItems(newListItems);
 		listProjects.setSelection(newProject.getTitle());
-		Window projectWindow = new Window(newProject.getTitle(), skin);
-		projectWindow.setPosition(width / 2 - projectWindow.getWidth() / 2,
-				height / 2 - projectWindow.getHeight() / 2);
-		projectWindows.add(projectWindow);
-		stage.addActor(projectWindow);
 		onProjectChanged();
 	}
 
@@ -105,14 +105,7 @@ public class GUIEditorScreen implements Screen {
 			}
 		}
 		listProjects.setItems(newListItems);
-		// Find and remove project window
-		for (int i = 0; i < projectWindows.size; i++) {
-			if (projectWindows.get(i).getTitle()
-					.compareTo(selectedProjectTitle) == 0) {
-				projectWindows.get(i).remove();
-				projectWindows.removeIndex(i);
-			}
-		}
+		
 		// Find and remove project
 		for (Project project : projects) {
 			if (project.getTitle().compareTo(selectedProjectTitle) == 0)
@@ -133,32 +126,6 @@ public class GUIEditorScreen implements Screen {
 		}
 		throw new Exception("Project with title \"" + title
 				+ "\" not found in projectList.");
-	}
-
-	private int getProjectWindowIndex(String title) {
-		for (int i = 0; i < projectWindows.size; i++) {
-			Window projectWindow = projectWindows.get(i);
-			if (projectWindow.getTitle().compareTo(title) == 0)
-				return i;
-		}
-		return -1;
-	}
-
-	private void updateProjectWindows() {
-		String selection = listProjects.getSelection();
-		// Only display selected project
-		for (int i = 0; i < projectWindows.size; i++) {
-			Window projectWindow = projectWindows.get(i);
-			if (projectWindow.getTitle().compareTo(selection) == 0)
-				projectWindow.setVisible(true);
-			else {
-				projectWindow.setVisible(false);
-			}
-
-			// Update active project window position
-			// projectWindow.setPosition(width/2 - projectWindow.getWidth()/2,
-			// height/2-projectWindow.getHeight()/2);
-		}
 	}
 
 	private void showError(String message) {
@@ -194,10 +161,10 @@ public class GUIEditorScreen implements Screen {
 		batch = new SpriteBatch();
 		skin = new Skin(Gdx.files.internal("data/uiskin.json"));
 		stage = new Stage(width, height, true);
+		gson = new Gson();
 		Gdx.input.setInputProcessor(stage);
 		
 		projects = new Array<Project>();
-		projectWindows = new Array<Window>();
 
 		// window.debug();
 
@@ -224,7 +191,8 @@ public class GUIEditorScreen implements Screen {
 		
 		wndInfo = createWndInfo();
 		stage.addActor(wndInfo);
-	}
+		
+		}
 
 	public void updateWindows() {
 		// wndContainers.setWidth(123);
@@ -284,12 +252,30 @@ public class GUIEditorScreen implements Screen {
 	}
 
 	private void onProjectChanged() {
-		updateListLayouts();
-		updateProjectWindows();
+		onLayoutChanged();
 	}
 	
 	private void onLayoutChanged() {
 		updateListLayouts();
+		layoutChanged = true;
+	}
+	
+	public boolean layoutHasChanged() { return layoutChanged; }
+	public void layoutChangeAccepted() { layoutChanged = false; }
+	
+	public Layout getSelectedLayout() {
+		String selectedLayoutTitle = listLayouts.getSelection();
+		
+		try {
+			for (Layout layout : getSelectedProject().getLayouts()){
+				if (layout.getTitle().compareTo(selectedLayoutTitle) == 0)
+					return layout;
+			}
+		} catch (Exception e) {
+			return null;
+		}
+		
+		return null;
 	}
 	
 	@Override
@@ -350,6 +336,22 @@ public class GUIEditorScreen implements Screen {
 		window.add(btnAddImageButtonToggle);
 
 		window.pack();
+		
+		btnAddTextButton.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled()) {
+					Layout selectedLayout = getSelectedLayout();
+					if (selectedLayout != null) {
+						selectedLayout.addActor(new TextButton("Test", skin));
+						showInfo("TextButton added.");
+						layoutChanged = true;
+					}
+				}
+				return false;
+			}
+		});
 
 		return window;
 	}
@@ -468,6 +470,15 @@ public class GUIEditorScreen implements Screen {
 		TextButton btnDelete = new TextButton("Delete", skin);
 		
 		listLayouts = new List(new String [] {}, skin);
+		listLayouts.addListener(new EventListener() {
+			
+			@Override
+			public boolean handle(Event event) {
+				if (event.isHandled())
+					layoutChanged = true;
+				return false;
+			}
+		});
 		
 		window.add(new SplitPane(new ScrollPane(listLayouts), new SplitPane(btnNew, btnDelete, false, skin), true, skin));
 
@@ -503,7 +514,7 @@ public class GUIEditorScreen implements Screen {
 	private void updateListLayouts() {
 		if (projects.size > 0) {
 			try {
-				Array<Layout> layouts = getSelectedProject().getLayouts();
+					Array<Layout> layouts = getSelectedProject().getLayouts();
 					String layoutTitles[] = new String[layouts.size];
 					for (int i = 0; i < layouts.size; i++) {
 						layoutTitles[i] = layouts.get(i).getTitle();
@@ -579,7 +590,7 @@ public class GUIEditorScreen implements Screen {
 				showError("Layout title must be unique!");
 			else { 
 				wndNewLayout.setVisible(false);
-				updateListLayouts();
+				onLayoutChanged();
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -733,26 +744,16 @@ public class GUIEditorScreen implements Screen {
 			public boolean handle(Event event) {
 				if (event.isHandled()) {
 					// Check if project name is unique
-					boolean isUnique = true;
-					String[] projectNames = listProjects.getItems();
-					String projectName = fieldTitle.getText();
-					for (int i = 0; i < projectNames.length; i++) {
-						if (projectNames[i].compareTo(projectName) == 0)
-							isUnique = false;
-					}
 
 					// If yes, create new project
-					if (isUnique) {
-						Project newProject = new Project(projectName);
+					String projectTitle = fieldTitle.getText();
+						Project newProject = new Project(projectTitle);
 						newProject.setDescription(fieldDescription.getText());
 
 						addProject(newProject);
 
 						wndNewProject.setVisible(false);
 						// Else, display an error message
-					} else {
-						showError("The project title has to be unique!");
-					}
 				}
 				return false;
 			}
@@ -766,6 +767,15 @@ public class GUIEditorScreen implements Screen {
 		stage.addActor(wndNewProject);
 		centerWindow(wndNewProject);
 		wndNewProject.toFront();
+	}
+	
+	private boolean isProjectTitleUnique(String title) {
+		String[] projectNames = listProjects.getItems();
+		for (int i = 0; i < projectNames.length; i++) {
+			if (projectNames[i].compareTo(title) == 0)
+				return false;
+		}
+		return true;
 	}
 
 	private void centerWindow(Window window) {
@@ -800,9 +810,9 @@ public class GUIEditorScreen implements Screen {
 					FileHandle projectFile = Gdx.files
 							.internal(projectFilePath);
 					String projectJson = projectFile.readString();
-					gson = new Gson();
 					Project project = gson.fromJson(projectJson, Project.class);
 					addProject(project);
+					wndLoadProject.setVisible(false);
 				}
 				return false;
 			}
