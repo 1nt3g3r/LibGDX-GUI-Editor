@@ -21,7 +21,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.utils.Array;
-import com.google.gson.Gson;
 import com.saschaheylik.guieditor.Layout;
 import com.saschaheylik.guieditor.Project;
 
@@ -40,7 +39,6 @@ public class GUIEditorScreen implements Screen {
 	private Window wndNewLayout, wndInfo;
 
 	private Array<Project> projects;
-	private Gson gson;
 
 	private String projectFolder = "projects";
 	private boolean layoutChanged = false;
@@ -49,17 +47,18 @@ public class GUIEditorScreen implements Screen {
 	public void hide() {}
 
 	private void saveSelectedProject() {
+		Project project = null;
 		try {
-			Project project = getSelectedProject();
-			String path = projectFolder + "/" + project.getTitle() + ".json";
-			FileHandle file = Gdx.files.local(path);
-			String projectJson = gson.toJson(project);
-			file.writeString(projectJson, false);
-			showInfo("Saved project as \"" + path + "\".");
+			project = getSelectedProject();
 		} catch (Exception e) {
 			showError("Project couldn't be saved (none selected?)");
-			e.printStackTrace();
+			return;
 		}
+		if (project != null){
+			project.save(projectFolder);
+			showInfo("Saved project as \"" + projectFolder + "/" + project.getTitle() + "\"" + ".");
+		} else 
+			showError("Couldn't save project.");
 	}
 
 	private void addProject(Project newProject) {
@@ -161,7 +160,6 @@ public class GUIEditorScreen implements Screen {
 		batch = new SpriteBatch();
 		skin = new Skin(Gdx.files.internal("data/uiskin.json"));
 		stage = new Stage(width, height, true);
-		gson = new Gson();
 		Gdx.input.setInputProcessor(stage);
 		
 		projects = new Array<Project>();
@@ -785,6 +783,11 @@ public class GUIEditorScreen implements Screen {
 
 	private void displayLoadProjectForm() {
 		FileHandle[] projectFiles = Gdx.files.internal(projectFolder).list();
+		
+		if (projectFiles.length == 0) { 
+			showInfo("Project folder is empty, nothing to load.");
+			return;
+		}
 
 		if (wndLoadProject != null) {
 			wndLoadProject.setVisible(true);
@@ -807,12 +810,11 @@ public class GUIEditorScreen implements Screen {
 			public boolean handle(Event event) {
 				if (event.isHandled()) {
 					String projectFilePath = listProjectFiles.getSelection();
-					FileHandle projectFile = Gdx.files
-							.internal(projectFilePath);
-					String projectJson = projectFile.readString();
-					Project project = gson.fromJson(projectJson, Project.class);
-					addProject(project);
-					wndLoadProject.setVisible(false);
+					Project project = Project.load(projectFilePath);
+					if (project != null) {
+						addProject(project);
+						wndLoadProject.setVisible(false);
+					} else showError("Couldn't load project!");
 				}
 				return false;
 			}
