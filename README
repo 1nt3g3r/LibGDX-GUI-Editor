@@ -1,2 +1,48 @@
 Screenshot of prototype-ish GUI Layout:
 http://i.imgur.com/JiIs4.png
+
+Pseudo-usage-example:
+private Array<Layout> layouts;
+String activeLayout;
+
+@Override
+public void create() {
+setLayout("mainmenu");
+}
+
+private void update() {
+    if(getLayout("mainmenu").onClick("btnStartGame"))
+        setLayout("game");
+}
+
+private Layout getActiveLayout() {
+    return getLayout(activeLayout);
+}
+
+private Layout getLayout(String layoutTitle) {
+for (Layout l : layouts) {
+   if (l.getTitle().compareTo(activeLayout) == 0)
+             return l;
+    }
+    return null;
+}
+
+private void setLayout(String layoutName) {
+    if (getLayout(layoutName)==null) {
+        Layout newLayout = Layout.load("layouts/"+layoutName+".layout");
+        newLayout.initialize();
+        layouts.add(newLayout);
+    }
+    activeLayout = layoutName;
+}
+
+@Override
+private void render() {
+update();
+Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+batch.setProjectionMatrix(camera.combined);
+batch.start();
+getActiveLayout().render(batch);
+batch.end();
+}
