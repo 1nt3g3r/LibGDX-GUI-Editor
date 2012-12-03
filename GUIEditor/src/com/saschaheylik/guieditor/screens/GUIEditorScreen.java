@@ -108,7 +108,8 @@ public class GUIEditorScreen implements Screen {
 	private void removeSelectedProject() {
 		if (listProjects.getItems().length == 0)
 			return;
-		int selectedProject = listProjects.getSelectedIndex();
+		
+		int selectedProjectIndex = listProjects.getSelectedIndex();
 		String selectedProjectTitle = listProjects.getSelection();
 		// Find and remove project title from list
 		String[] items = listProjects.getItems();
@@ -116,7 +117,7 @@ public class GUIEditorScreen implements Screen {
 		boolean found = false;
 		for (int i = 0; i < items.length; i++) {
 			String item = items[i];
-			if (i == selectedProject) {
+			if (i == selectedProjectIndex) {
 				found = true;
 			} else {
 				if (found)
@@ -546,6 +547,8 @@ public class GUIEditorScreen implements Screen {
 				e.printStackTrace();
 				return;
 			}
+		} else {
+			listLayouts.setItems(new String [] {});
 		}
 	}
 	
