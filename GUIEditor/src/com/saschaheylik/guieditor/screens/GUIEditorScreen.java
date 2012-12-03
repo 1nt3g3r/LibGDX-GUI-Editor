@@ -60,10 +60,32 @@ public class GUIEditorScreen implements Screen {
 		} else 
 			showError("Couldn't save project.");
 	}
+	
+	private boolean yesNoDialog(String title, String message) {
+		new Dialog(title, skin, "dialog") {
+			protected void result(Object object) {
+			}
+		}.text(message).button("No",false).button("Yes", true).show(stage);
+		return false;
+	}
+	
+	private void overrideProject(Project newProject) {
+		//Find and replace old project with same title
+		for (Project project : projects) {
+			if (project.getTitle().compareTo(newProject.getTitle()) == 0) {
+				projects.removeValue(project, false);
+				projects.add(newProject);
+				onProjectChanged();
+			}
+		}
+	}
 
 	private void addProject(Project newProject) {
 		if (!isProjectTitleUnique(newProject.getTitle())) {
-			showError("Cannot add project because title is already in use!");
+			//showError("Cannot add project because title is already in use!");
+			if (yesNoDialog("Override project?", 
+					"Are you sure you want to override project\""+newProject.getTitle()+"\" ?"))
+				overrideProject(newProject);
 			return;
 		}
 		
